@@ -1,0 +1,34 @@
+name: Sync BioMar GPS data
+
+on:
+  schedule:
+    - cron: "*/20 * * * *"   # runs every 20 minutes
+  workflow_dispatch: {}      # allows manual "Run workflow" from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Run sync script
+        run: python sync.py
+
+      - name: Commit data.json if changed
+        run: |
+          git config user.name "biomar-sync-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if git diff --quiet -- data.json; then
+            echo "No changes to data.json"
+          else
+            git add data.json
+            git commit -m "Sync BioMar GPS data"
+            git push
+          fi
